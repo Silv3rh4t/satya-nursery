@@ -66,6 +66,20 @@
         .plant-card:hover .plant-overlay {
             opacity: 1;
         }
+        .quiz-option[aria-pressed="true"] {
+            background-color: #166534;
+            color: #ffffff;
+            border-color: #166534;
+            box-shadow: 0 10px 25px rgba(22, 101, 52, 0.2);
+            transform: translateY(-1px);
+        }
+        .fade-slide-in {
+            animation: fadeSlideIn 0.45s ease-out;
+        }
+        @keyframes fadeSlideIn {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body class="font-sans text-gray-800 smooth-scroll bg-earth-50">
@@ -293,6 +307,54 @@
                             </button>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Plant Recommendation Quiz Section -->
+    <section id="plant-quiz" class="py-20 bg-earth-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="font-serif text-4xl md:text-5xl font-bold text-earth-800 mb-4">Find the Perfect Plant for Your Home</h2>
+                <p class="text-earth-600 text-lg max-w-2xl mx-auto">Answer 3 quick questions and get easy plant suggestions tailored to your space.</p>
+            </div>
+
+            <div class="bg-white rounded-3xl shadow-lg p-6 md:p-10 border border-earth-100">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div>
+                        <p class="text-sm uppercase tracking-wider text-leaf-700 font-semibold mb-4">Step 1: Sunlight</p>
+                        <div class="space-y-3">
+                            <button class="quiz-option w-full text-left text-lg md:text-xl font-semibold px-6 py-5 rounded-2xl border-2 border-earth-200 hover:border-leaf-500 transition flex items-center gap-3" data-step="sunlight" data-value="full-sun" aria-pressed="false"><span>☀️</span> Full Sun</button>
+                            <button class="quiz-option w-full text-left text-lg md:text-xl font-semibold px-6 py-5 rounded-2xl border-2 border-earth-200 hover:border-leaf-500 transition flex items-center gap-3" data-step="sunlight" data-value="partial-sun" aria-pressed="false"><span>🌤️</span> Partial Sun</button>
+                            <button class="quiz-option w-full text-left text-lg md:text-xl font-semibold px-6 py-5 rounded-2xl border-2 border-earth-200 hover:border-leaf-500 transition flex items-center gap-3" data-step="sunlight" data-value="low-light" aria-pressed="false"><span>🌙</span> Low Light</button>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="text-sm uppercase tracking-wider text-leaf-700 font-semibold mb-4">Step 2: Care Level</p>
+                        <div class="space-y-3">
+                            <button class="quiz-option w-full text-left text-lg md:text-xl font-semibold px-6 py-5 rounded-2xl border-2 border-earth-200 hover:border-leaf-500 transition flex items-center gap-3" data-step="care" data-value="low-maintenance" aria-pressed="false"><span>🪴</span> Low Maintenance</button>
+                            <button class="quiz-option w-full text-left text-lg md:text-xl font-semibold px-6 py-5 rounded-2xl border-2 border-earth-200 hover:border-leaf-500 transition flex items-center gap-3" data-step="care" data-value="medium" aria-pressed="false"><span>🌱</span> Medium</button>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="text-sm uppercase tracking-wider text-leaf-700 font-semibold mb-4">Step 3: Space</p>
+                        <div class="space-y-3">
+                            <button class="quiz-option w-full text-left text-lg md:text-xl font-semibold px-6 py-5 rounded-2xl border-2 border-earth-200 hover:border-leaf-500 transition flex items-center gap-3" data-step="space" data-value="indoor" aria-pressed="false"><span>🏠</span> Indoor</button>
+                            <button class="quiz-option w-full text-left text-lg md:text-xl font-semibold px-6 py-5 rounded-2xl border-2 border-earth-200 hover:border-leaf-500 transition flex items-center gap-3" data-step="space" data-value="balcony" aria-pressed="false"><span>🏙️</span> Balcony</button>
+                            <button class="quiz-option w-full text-left text-lg md:text-xl font-semibold px-6 py-5 rounded-2xl border-2 border-earth-200 hover:border-leaf-500 transition flex items-center gap-3" data-step="space" data-value="garden" aria-pressed="false"><span>🌳</span> Garden</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 flex flex-wrap items-center gap-4">
+                    <button id="quizResetBtn" class="px-6 py-3 rounded-full border-2 border-earth-300 text-earth-700 font-semibold hover:border-leaf-600 hover:text-leaf-700 transition">Reset Quiz</button>
+                    <p id="quizHint" class="text-earth-500">Select all 3 options to reveal your recommendations.</p>
+                </div>
+
+                <div id="quizResults" class="hidden mt-10">
+                    <h3 class="font-serif text-3xl font-bold text-earth-800 mb-6">Recommended Plants for You</h3>
+                    <div id="quizCards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
                 </div>
             </div>
         </div>
@@ -649,6 +711,90 @@
                     });
                 }
             });
+        });
+
+        const quizState = { sunlight: null, care: null, space: null };
+        const quizResultsEl = document.getElementById('quizResults');
+        const quizCardsEl = document.getElementById('quizCards');
+        const quizHintEl = document.getElementById('quizHint');
+
+        const plantRecommendations = [
+            {
+                matches: selection => selection.sunlight === 'low-light' && selection.care === 'low-maintenance',
+                plants: [
+                    { name: 'Snake Plant', reason: 'Good for low light and easy care.', image: 'https://placehold.co/320x220?text=Snake+Plant' },
+                    { name: 'ZZ Plant', reason: 'Thrives with little light and infrequent watering.', image: 'https://placehold.co/320x220?text=ZZ+Plant' },
+                    { name: 'Pothos', reason: 'Tolerates neglect and adapts well indoors.', image: 'https://placehold.co/320x220?text=Pothos' }
+                ]
+            },
+            {
+                matches: selection => selection.sunlight === 'full-sun' && selection.space === 'balcony',
+                plants: [
+                    { name: 'Hibiscus', reason: 'Loves bright sun and blooms beautifully on balconies.', image: 'https://placehold.co/320x220?text=Hibiscus' },
+                    { name: 'Bougainvillea', reason: 'Strong sunlight encourages colorful flowering.', image: 'https://placehold.co/320x220?text=Bougainvillea' },
+                    { name: 'Marigold', reason: 'Great balcony bloomer for sunny spots.', image: 'https://placehold.co/320x220?text=Marigold' }
+                ]
+            },
+            {
+                matches: selection => selection.space === 'indoor' && selection.care === 'medium',
+                plants: [
+                    { name: 'Areca Palm', reason: 'Adds lush indoor greenery with moderate care.', image: 'https://placehold.co/320x220?text=Areca+Palm' },
+                    { name: 'Money Plant', reason: 'A reliable indoor favorite with easy training needs.', image: 'https://placehold.co/320x220?text=Money+Plant' },
+                    { name: 'Rubber Plant', reason: 'Indoor-friendly and grows well with regular attention.', image: 'https://placehold.co/320x220?text=Rubber+Plant' }
+                ]
+            }
+        ];
+
+        const fallbackPlants = [
+            { name: 'Aloe Vera', reason: 'Adaptable and friendly for most home conditions.', image: 'https://placehold.co/320x220?text=Aloe+Vera' },
+            { name: 'Jade Plant', reason: 'Compact and easy to maintain in bright spaces.', image: 'https://placehold.co/320x220?text=Jade+Plant' },
+            { name: 'Spider Plant', reason: 'Great all-rounder for shelves, windows, and patios.', image: 'https://placehold.co/320x220?text=Spider+Plant' }
+        ];
+
+        function renderRecommendations(plants) {
+            quizCardsEl.innerHTML = plants.slice(0, 3).map(plant => `
+                <article class="bg-earth-50 border border-earth-200 rounded-2xl overflow-hidden shadow-sm fade-slide-in">
+                    <img src="${plant.image}" alt="${plant.name}" class="w-full h-44 object-cover">
+                    <div class="p-5">
+                        <h4 class="font-serif text-2xl font-bold text-earth-800 mb-2">${plant.name}</h4>
+                        <p class="text-earth-600">${plant.reason}</p>
+                    </div>
+                </article>
+            `).join('');
+        }
+
+        function updateQuiz() {
+            const isComplete = Object.values(quizState).every(Boolean);
+            if (!isComplete) return;
+            const match = plantRecommendations.find(rule => rule.matches(quizState));
+            renderRecommendations(match ? match.plants : fallbackPlants);
+            quizResultsEl.classList.remove('hidden');
+            quizHintEl.textContent = 'Great picks! Here are plants that suit your choices.';
+            quizResultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        document.querySelectorAll('.quiz-option').forEach(button => {
+            button.addEventListener('click', () => {
+                const step = button.dataset.step;
+                const value = button.dataset.value;
+                quizState[step] = value;
+
+                document.querySelectorAll(`.quiz-option[data-step="${step}"]`).forEach(el => {
+                    el.setAttribute('aria-pressed', 'false');
+                });
+                button.setAttribute('aria-pressed', 'true');
+                updateQuiz();
+            });
+        });
+
+        document.getElementById('quizResetBtn').addEventListener('click', () => {
+            quizState.sunlight = null;
+            quizState.care = null;
+            quizState.space = null;
+            document.querySelectorAll('.quiz-option').forEach(el => el.setAttribute('aria-pressed', 'false'));
+            quizResultsEl.classList.add('hidden');
+            quizCardsEl.innerHTML = '';
+            quizHintEl.textContent = 'Select all 3 options to reveal your recommendations.';
         });
     </script>
 </body>
